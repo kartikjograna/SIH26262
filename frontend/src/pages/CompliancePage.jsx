@@ -26,9 +26,24 @@ const CompliancePage = () => {
   const [docType, setDocType] = useState('LEASE_AGREEMENT');
   const [expiryDate, setExpiryDate] = useState('');
   const [fileName, setFileName] = useState('');
+  const [fileSize, setFileSize] = useState('');
+  const [isDragging, setIsDragging] = useState(false);
   const [undertakingAgreed, setUndertakingAgreed] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [feedback, setFeedback] = useState(null);
+
+  // Prevent browser from opening dragged files in new tabs globally
+  useEffect(() => {
+    const preventDefaultDrop = (e) => {
+      e.preventDefault();
+    };
+    window.addEventListener('dragover', preventDefaultDrop);
+    window.addEventListener('drop', preventDefaultDrop);
+    return () => {
+      window.removeEventListener('dragover', preventDefaultDrop);
+      window.removeEventListener('drop', preventDefaultDrop);
+    };
+  }, []);
 
   // Fetch applications for this institution
   useEffect(() => {
@@ -47,14 +62,64 @@ const CompliancePage = () => {
     fetchApps();
   }, [currentInstitution._id, dataVersion]);
 
+
   // Compute live preview of traffic light badge as date is selected
   const expiryPreview = expiryDate ? getExpiryStatus(expiryDate) : null;
 
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files[0]) {
-      setFileName(e.target.files[0].name);
+      const file = e.target.files[0];
+      setFileName(file.name);
+      setFileSize((file.size / (1024 * 1024)).toFixed(2) + ' MB');
     }
   };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!isDragging) setIsDragging(true);
+  };
+
+  const handleDragEnter = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.currentTarget.contains(e.relatedTarget)) return;
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      const file = e.dataTransfer.files[0];
+      if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
+        setFileName(file.name);
+        setFileSize((file.size / (1024 * 1024)).toFixed(2) + ' MB');
+        setFeedback(null);
+      } else {
+        setFeedback({
+          type: 'error',
+          message: 'Please drop a valid PDF document (.pdf format only).'
+        });
+      }
+    }
+  };
+
+  const handleClearFile = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setFileName('');
+    setFileSize('');
+  };
+
 
   const handleUploadSubmit = async (e) => {
     e.preventDefault();
@@ -276,37 +341,84 @@ const CompliancePage = () => {
                 )}
               </div>
 
-              {/* File Attachment Dropzone */}
+              {/* File Attachment Dropzone with Drag and Drop */}
               <div className="form-group">
                 <label className="form-label required" htmlFor="file-input">
                   Upload Signed Document (PDF / Max 10MB)
                 </label>
-                <div style={{
-                  border: '2px dashed #cbd5e1',
-                  borderRadius: '6px',
-                  padding: '1.25rem',
-                  textAlign: 'center',
-                  backgroundColor: '#f8fafc',
-                  cursor: 'pointer'
-                }}>
+                <div
+                  onDragOver={handleDragOver}
+                  onDragEnter={handleDragEnter}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                  style={{
+                    border: isDragging ? '2px dashed #e85d04' : fileName ? '2px solid #86efac' : '2px dashed #cbd5e1',
+                    borderRadius: '8px',
+                    padding: '1.5rem',
+                    textAlign: 'center',
+                    backgroundColor: isDragging ? '#fff7ed' : fileName ? '#f0fdf4' : '#f8fafc',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    boxShadow: isDragging ? '0 0 0 4px rgba(232, 93, 4, 0.15)' : 'none'
+                  }}
+                >
                   <input
                     type="file"
                     id="file-input"
-                    accept=".pdf"
+                    accept=".pdf,application/pdf"
                     onChange={handleFileChange}
                     style={{ display: 'none' }}
                   />
-                  <label htmlFor="file-input" style={{ cursor: 'pointer', display: 'block' }}>
-                    <UploadCloud size={32} color="#0a2540" style={{ margin: '0 auto 6px' }} />
-                    <p style={{ fontSize: '0.88rem', fontWeight: '600', color: '#0a2540' }}>
-                      {fileName ? `Attached: ${fileName}` : 'Click to Browse or Drag PDF Document'}
-                    </p>
-                    <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
-                      Registered deed with stamp paper and seal
-                    </span>
-                  </label>
+
+                  {fileName ? (
+                    <div>
+                      <CheckCircle2 size={36} color="#15803d" style={{ margin: '0 auto 8px' }} />
+                      <p style={{ fontSize: '0.92rem', fontWeight: '700', color: '#14532d' }}>
+                        File Attached: {fileName}
+                      </p>
+                      <p style={{ fontSize: '0.78rem', color: '#166534', marginTop: '2px' }}>
+                        Size: {fileSize || 'PDF Document'} | Ready for upload
+                      </p>
+                      <div style={{ marginTop: '10px', display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                        <label
+                          htmlFor="file-input"
+                          className="btn-outline btn-sm"
+                          style={{ cursor: 'pointer', fontSize: '0.75rem', padding: '3px 10px' }}
+                        >
+                          Change File
+                        </label>
+                        <button
+                          type="button"
+                          onClick={handleClearFile}
+                          className="btn-outline btn-sm"
+                          style={{ fontSize: '0.75rem', padding: '3px 10px', color: '#b91c1c', borderColor: '#fca5a5' }}
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <label htmlFor="file-input" style={{ cursor: 'pointer', display: 'block' }}>
+                      <UploadCloud
+                        size={36}
+                        color={isDragging ? '#e85d04' : '#0a2540'}
+                        style={{
+                          margin: '0 auto 8px',
+                          transform: isDragging ? 'scale(1.15)' : 'scale(1)',
+                          transition: 'transform 0.2s ease'
+                        }}
+                      />
+                      <p style={{ fontSize: '0.92rem', fontWeight: '700', color: isDragging ? '#e85d04' : '#0a2540' }}>
+                        {isDragging ? 'Drop Your PDF Document Here!' : 'Click to Browse or Drag & Drop PDF Document Here'}
+                      </p>
+                      <span style={{ fontSize: '0.76rem', color: '#64748b', display: 'block', marginTop: '4px' }}>
+                        Supports registered lease deeds, NOCs, and municipal certificates (.pdf up to 10MB)
+                      </span>
+                    </label>
+                  )}
                 </div>
               </div>
+
 
               {/* Statutory Undertaking Checkbox */}
               <div className="form-group" style={{ marginTop: '1rem' }}>
