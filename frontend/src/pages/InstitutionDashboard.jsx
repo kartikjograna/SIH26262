@@ -229,45 +229,58 @@ const InstitutionDashboard = () => {
                     </button>
                   </div>
 
-                  {/* Stage Stepper Visualizer */}
-                  <div style={{ margin: '1rem 0' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', position: 'relative' }}>
-                      <div className="stepper-progress-bar">
-                        <div
-                          className="stepper-progress-fill"
-                          style={{
-                            width: app.currentStage === 'SUBMITTED' ? '15%' :
-                                   app.currentStage === 'SCRUTINY' ? '45%' :
-                                   app.currentStage === 'EVC' ? '70%' :
-                                   app.currentStage === 'SAC_SHC' ? '85%' :
-                                   app.currentStage === 'APPROVED' ? '100%' : '30%'
-                          }}
-                        ></div>
-                      </div>
-
-                      {['SUBMITTED', 'SCRUTINY', 'EVC', 'SAC_SHC', 'APPROVED'].map((step, idx) => {
-                        const stepOrder = ['SUBMITTED', 'SCRUTINY', 'EVC', 'SAC_SHC', 'APPROVED'];
-                        const currentIdx = stepOrder.indexOf(app.currentStage);
-                        const isCompleted = currentIdx > idx || app.currentStage === 'APPROVED';
-                        const isCurrent = app.currentStage === step;
-                        const isDeficiency = app.currentStage === 'DEFICIENCY' && step === 'SCRUTINY';
-
-                        return (
-                          <div
-                            key={step}
-                            className={`stage-step-item ${isCompleted ? 'completed' : ''} ${isCurrent ? 'current' : ''} ${isDeficiency ? 'deficiency' : ''}`}
-                          >
-                            <div className="stage-step-circle">
-                              {isCompleted ? '✓' : idx + 1}
-                            </div>
-                            <span className="stage-step-title">
-                              {step === 'SAC_SHC' ? 'SAC / SHC' : step}
-                            </span>
-                          </div>
-                        );
-                      })}
+                  {/* Stage Stepper Visualizer - Centered & Aligned */}
+                  <div className="stage-stepper">
+                    <div className="stepper-progress-bar">
+                      <div
+                        className="stepper-progress-fill"
+                        style={{
+                          width: app.currentStage === 'SUBMITTED' ? '0%' :
+                                 (app.currentStage === 'SCRUTINY' || app.currentStage === 'DEFICIENCY') ? '25%' :
+                                 app.currentStage === 'EVC' ? '50%' :
+                                 app.currentStage === 'SAC_SHC' ? '75%' :
+                                 app.currentStage === 'APPROVED' ? '100%' : '0%'
+                        }}
+                      ></div>
                     </div>
+
+                    {[
+                      { key: 'SUBMITTED', label: 'SUBMITTED' },
+                      { key: 'SCRUTINY', label: 'SCRUTINY' },
+                      { key: 'EVC', label: 'EVC' },
+                      { key: 'SAC_SHC', label: 'SAC / SHC' },
+                      { key: 'APPROVED', label: 'APPROVED' }
+                    ].map((step, idx) => {
+                      const isApproved = app.currentStage === 'APPROVED';
+                      const isDeficiency = app.currentStage === 'DEFICIENCY';
+                      
+                      let stageIdx = 0;
+                      if (app.currentStage === 'SUBMITTED') stageIdx = 0;
+                      else if (app.currentStage === 'SCRUTINY' || isDeficiency) stageIdx = 1;
+                      else if (app.currentStage === 'EVC') stageIdx = 2;
+                      else if (app.currentStage === 'SAC_SHC') stageIdx = 3;
+                      else if (isApproved) stageIdx = 4;
+
+                      const isCompleted = isApproved || stageIdx > idx;
+                      const isCurrent = !isDeficiency && stageIdx === idx;
+                      const isDeficientStep = isDeficiency && idx === 1;
+
+                      return (
+                        <div
+                          key={step.key}
+                          className={`stage-step-item ${isCompleted ? 'completed' : ''} ${isCurrent ? 'current' : ''} ${isDeficientStep ? 'deficiency' : ''}`}
+                        >
+                          <div className="stage-step-circle">
+                            {isCompleted ? '✓' : isDeficientStep ? '!' : idx + 1}
+                          </div>
+                          <span className="stage-step-title">
+                            {step.label}
+                          </span>
+                        </div>
+                      );
+                    })}
                   </div>
+
 
                   {/* Document Expiry Status Cards with Traffic Light */}
                   <div style={{

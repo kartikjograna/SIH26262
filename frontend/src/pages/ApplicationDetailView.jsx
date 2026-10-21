@@ -117,44 +117,59 @@ const ApplicationDetailView = () => {
         </div>
 
         {/* Workflow Stepper */}
-        <div style={{ padding: '1.25rem 1.25rem 0.5rem' }}>
+        <div style={{ padding: '0.75rem 1.25rem 0.5rem' }}>
           <div className="stage-stepper">
             <div className="stepper-progress-bar">
               <div
                 className="stepper-progress-fill"
                 style={{
-                  width: application.currentStage === 'SUBMITTED' ? '15%' :
-                         application.currentStage === 'SCRUTINY' ? '45%' :
-                         application.currentStage === 'EVC' ? '70%' :
-                         application.currentStage === 'SAC_SHC' ? '85%' :
-                         application.currentStage === 'APPROVED' ? '100%' : '30%'
+                  width: application.currentStage === 'SUBMITTED' ? '0%' :
+                         (application.currentStage === 'SCRUTINY' || application.currentStage === 'DEFICIENCY') ? '25%' :
+                         application.currentStage === 'EVC' ? '50%' :
+                         application.currentStage === 'SAC_SHC' ? '75%' :
+                         application.currentStage === 'APPROVED' ? '100%' : '0%'
                 }}
               ></div>
             </div>
 
-            {['SUBMITTED', 'SCRUTINY', 'EVC', 'SAC_SHC', 'APPROVED'].map((step, idx) => {
-              const stepOrder = ['SUBMITTED', 'SCRUTINY', 'EVC', 'SAC_SHC', 'APPROVED'];
-              const currentIdx = stepOrder.indexOf(application.currentStage);
-              const isCompleted = currentIdx > idx || application.currentStage === 'APPROVED';
-              const isCurrent = application.currentStage === step;
-              const isDeficiency = application.currentStage === 'DEFICIENCY' && step === 'SCRUTINY';
+            {[
+              { key: 'SUBMITTED', label: 'SUBMITTED' },
+              { key: 'SCRUTINY', label: 'SCRUTINY' },
+              { key: 'EVC', label: 'EVC' },
+              { key: 'SAC_SHC', label: 'SAC / SHC' },
+              { key: 'APPROVED', label: 'APPROVED' }
+            ].map((step, idx) => {
+              const isApproved = application.currentStage === 'APPROVED';
+              const isDeficiency = application.currentStage === 'DEFICIENCY';
+              
+              let stageIdx = 0;
+              if (application.currentStage === 'SUBMITTED') stageIdx = 0;
+              else if (application.currentStage === 'SCRUTINY' || isDeficiency) stageIdx = 1;
+              else if (application.currentStage === 'EVC') stageIdx = 2;
+              else if (application.currentStage === 'SAC_SHC') stageIdx = 3;
+              else if (isApproved) stageIdx = 4;
+
+              const isCompleted = isApproved || stageIdx > idx;
+              const isCurrent = !isDeficiency && stageIdx === idx;
+              const isDeficientStep = isDeficiency && idx === 1;
 
               return (
                 <div
-                  key={step}
-                  className={`stage-step-item ${isCompleted ? 'completed' : ''} ${isCurrent ? 'current' : ''} ${isDeficiency ? 'deficiency' : ''}`}
+                  key={step.key}
+                  className={`stage-step-item ${isCompleted ? 'completed' : ''} ${isCurrent ? 'current' : ''} ${isDeficientStep ? 'deficiency' : ''}`}
                 >
                   <div className="stage-step-circle">
-                    {isCompleted ? '✓' : idx + 1}
+                    {isCompleted ? '✓' : isDeficientStep ? '!' : idx + 1}
                   </div>
                   <span className="stage-step-title">
-                    {step === 'SAC_SHC' ? 'SAC / SHC' : step}
+                    {step.label}
                   </span>
                 </div>
               );
             })}
           </div>
         </div>
+
 
         {/* Quick Metadata Bar */}
         <div style={{
