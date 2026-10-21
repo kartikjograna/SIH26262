@@ -795,14 +795,14 @@ body {
   background-color: #f8fafc;
 }
 
-/* Stage Stepper Visualizer */
+/* Stage Stepper Visualizer - Perfectly Centered & Aligned */
 .stage-stepper {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   position: relative;
-  padding: 1rem 0;
-  margin-bottom: 1.5rem;
+  padding: 10px 0 6px;
+  margin: 1.25rem 0;
 }
 
 .stage-step-item {
@@ -827,33 +827,37 @@ body {
   font-size: 0.85rem;
   color: var(--text-muted);
   transition: var(--transition);
+  box-shadow: 0 0 0 4px #ffffff; /* Clean white mask over progress line */
 }
 
 .stage-step-item.completed .stage-step-circle {
   background-color: var(--traffic-green);
   border-color: var(--traffic-green);
   color: #ffffff;
+  box-shadow: 0 0 0 4px #ffffff;
 }
 
 .stage-step-item.current .stage-step-circle {
   background-color: var(--gov-saffron);
   border-color: var(--gov-saffron);
   color: #ffffff;
-  box-shadow: 0 0 0 4px rgba(232, 93, 4, 0.25);
+  box-shadow: 0 0 0 4px #ffffff, 0 0 0 7px rgba(232, 93, 4, 0.2);
 }
 
 .stage-step-item.deficiency .stage-step-circle {
   background-color: var(--traffic-red);
   border-color: var(--traffic-red);
   color: #ffffff;
+  box-shadow: 0 0 0 4px #ffffff, 0 0 0 7px rgba(185, 28, 28, 0.2);
 }
 
 .stage-step-title {
   font-size: 0.78rem;
   font-weight: 600;
   color: var(--text-muted);
-  margin-top: 6px;
+  margin-top: 8px;
   text-align: center;
+  white-space: nowrap;
 }
 
 .stage-step-item.current .stage-step-title {
@@ -863,23 +867,34 @@ body {
 
 .stage-step-item.completed .stage-step-title {
   color: var(--traffic-green-text);
+  font-weight: 600;
+}
+
+.stage-step-item.deficiency .stage-step-title {
+  color: var(--traffic-red);
+  font-weight: 700;
 }
 
 .stepper-progress-bar {
   position: absolute;
-  top: 28px;
+  top: 28px; /* 10px padding-top + 18px circle radius = EXACT vertical center */
   left: 10%;
   width: 80%;
-  height: 3px;
-  background-color: var(--border-medium);
+  height: 4px;
+  background-color: #cbd5e1;
   z-index: 1;
+  transform: translateY(-50%);
+  border-radius: 2px;
 }
+
 
 .stepper-progress-fill {
   height: 100%;
   background-color: var(--traffic-green);
   transition: width 0.3s ease;
+  border-radius: 2px;
 }
+
 
 /* Audit Log Timeline */
 .timeline {
